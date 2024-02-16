@@ -3,7 +3,10 @@
 using namespace std;
 
 int main (){
-    
+    while (true){ //bucle infinito
+
+    //Variables declaradas para realizar el cálculo de las operaciones
+        
     double valor_usuario;
     int numero_anios;
     int opcion;
@@ -12,40 +15,41 @@ int main (){
     
     cout<<"inserte el valor del que necesita calcular su depreciacion"<<endl;
     cin>>valor_usuario;
-    cout<<"inserte el numero de años"<<endl;
+    cout<<"inserte el numero de anios"<<endl;
     cin>>numero_anios;
     
     cout<<"elija uno de los metodos de depreciacion disponibles"<<endl;
-    cout<<"1. línea recta"<<endl;
-    cout<<"2. suma digitos de los años"<<endl;
+    cout<<"1. linea recta"<<endl;
+    cout<<"2. suma digitos del tiempo elegido"<<endl;
     cout<<"0. salir del programa"<<endl;
-    
-    while (true){
-        cin>>opcion;
-        
-        switch (opcion){
-            case 1: cout<<"\nlínea recta"<<endl;
-            depreciacion=valor_usuario/numero_anios;
-            for(int i=1; i<=numero_anios; ++i){
-                cout<<i<<"\t$"<<depreciacion<<endl;
-                
-            }
-            case 2: cout<<"\nsuma digitos de los años";
-            suma_numero_anios=numero_anios*(numero_anios+1)/2;
-            for(int i=1; i<=numero_anios; ++i){
-                depreciacion=valor_usuario*(i/suma_numero_anios);
-                cout<<i<<"\t$"<<depreciacion<<endl;
-            }
-            case 0: 
-            cout<<"Fin del programa :)";
+
+    cin>>opcion;
+    if (opcion == 0) // Verificar si el usuario ingresó 0, para salir del programa
             break;
+
+    switch (opcion){
+
+        case 1: cout<<"\nLinea recta"<<endl;
+            depreciacion=valor_usuario/numero_anios;
+            for(int i=1; i<=numero_anios; ++i){ //con este for se muestra la descomposicion de los anios en la tabla
+                cout<<i<<"\t$"<<depreciacion<<endl;
+            }
             
-            
-            
-        }
+            break;
+
+        case 2: cout<<"\nSuma digitos del tiempo elegido"<<endl;
+            suma_numero_anios=(numero_anios*numero_anios+1)/2; //esta expresion funciona para cualquier valor de anios ingresado
+            for(int i=1; i<=numero_anios; ++i){
+                depreciacion=valor_usuario*(1.0 * (numero_anios - i + 1) / suma_numero_anios);//con esta expresion se logra la depreciacion para los anios restantes, agregue el 1.0 para garantizar el cálculo decimal
+                cout<<i<<"\t$"<<depreciacion<<endl;
+            }
+            break;
+        
         
         
     }
-    return 0;
-    
+    }
+
+return 0;
+
 }
