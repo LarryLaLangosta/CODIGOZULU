@@ -1,0 +1,43 @@
+#include <iostream>
+using namespace std;
+
+int main() {
+    
+    cout << "Ingrese el número de casos de prueba: ";
+    int m;
+    cin >> m;
+    
+    for (int i = 0; i < m; ++i) {
+        cout << "Ingrese: el volumen de SU piscina, el volumen del balde, los litros que pierde la piscina por viaje, luego, los datos de su vecino en el mismo orden" << endl;
+        int vol_1, volb_1, lits_1, vol_2, volb_2, lits_2;
+        cin >> vol_1 >> volb_1 >> lits_1 >> vol_2 >> volb_2 >> lits_2;
+        
+        int llenados_necesarios_1 = 0, llenados_necesarios_2 = 0;
+        
+        int vol_1_piscina = vol_1; 
+        while (vol_1_piscina > 0) {
+            vol_1_piscina -= volb_1;
+            vol_1_piscina += lits_1;
+            llenados_necesarios_1++;
+        }
+        
+        int vol_2_piscina = vol_2; 
+        while (vol_2_piscina > 0) {
+            vol_2_piscina -= volb_2;
+            vol_2_piscina += lits_2;
+            llenados_necesarios_2++;
+        }
+        
+        if (llenados_necesarios_1 == llenados_necesarios_2) {
+            cout << "empate " << llenados_necesarios_1 << endl;
+        }
+        else if (llenados_necesarios_1 < llenados_necesarios_2) {
+            cout << "yo " << llenados_necesarios_1 << endl;
+        }
+        else {
+            cout << "vecino " << llenados_necesarios_2 << endl;
+        }
+    }
+    
+    return 0;
+}
