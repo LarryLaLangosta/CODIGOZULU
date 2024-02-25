@@ -1,0 +1,37 @@
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "Ingrese el número de casos de prueba:" << endl;
+    int m;
+    cin >> m;
+
+    for (int i = 0; i < m; ++i) {
+        cout << "Ingrese el número de agujeros y la longitud de los parches para el caso " << i+1 << ":" << endl;
+        int n, L;
+        cin >> n >> L; // Número de agujeros y longitud de los parches
+        
+        int parches_necesarios = 0;
+        int pos = 0; // Posición actual del parche
+
+        cout << "Ingrese las posiciones de los agujeros para el caso " << i+1 << ":" << endl;
+        // Leer las posiciones de los agujeros y procesar uno por uno
+        for (int j = 0; j < n; ++j) {
+            int agujero;
+            cin >> agujero;
+
+            if (agujero <= pos) {
+                // Si el agujero está dentro del rango cubierto por el parche actual, continuar
+                continue;
+            } else {
+                // Si el agujero está fuera del rango cubierto por el parche actual, colocar un nuevo parche
+                parches_necesarios++;
+                pos = agujero + L - 1; // Actualizar la posición del parche
+            }
+        }
+
+        cout << "Para el caso " << i+1 << ", el mínimo número de parches necesarios es: " << parches_necesarios << endl;
+    }
+
+    return 0;
+}
