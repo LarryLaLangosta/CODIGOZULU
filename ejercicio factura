@@ -1,0 +1,36 @@
+#include <iostream>
+using namespace std;
+int main (){
+    cout<<"ingrese el numero de cuenta"<<endl;
+    int cuenta;
+    cin>>cuenta;
+    
+    cout<<"ingrese el tipo de su cuenta (r/n)"<<endl;
+    char tipo_cuenta;
+    cin>>tipo_cuenta;
+    
+    if(tipo_cuenta== 'r'){
+        double procesamiento=4.5, servicio_basico=20.5, costo_canales_premium=7.5, cantidad_a_pagar;
+        int canales_premium_usados;
+        cout<<"ingrese la cantidad de canales premium que usa"<<endl;
+        cin>>canales_premium_usados;
+        cantidad_a_pagar=procesamiento+servicio_basico+(costo_canales_premium*canales_premium_usados);
+        cout<<"cuenta: "<<cuenta<<" valor a facturar: $"<<cantidad_a_pagar<<endl;
+    }
+    else if(tipo_cuenta== 'n'){
+        double procesamiento=15, costo_canales_premium=50, servicio_basico, cantidad_a_pagar;
+        int canales_premium_usados, conexiones;
+        cout<<"ingrese la cantidad de canales premium que usa y las conexiones de su servicio"<<endl;
+        cin>>canales_premium_usados>>conexiones;
+        if(conexiones>10){
+            servicio_basico=75+((conexiones-10)*5);
+        }
+        else{
+            servicio_basico=75;
+        }
+        cantidad_a_pagar=procesamiento+(costo_canales_premium*canales_premium_usados)+servicio_basico;
+        cout<<"cuenta: "<<cuenta<<" valor a facturar: $"<<cantidad_a_pagar<<endl;
+        
+    }
+    return 0;
+}
