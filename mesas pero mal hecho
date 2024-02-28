@@ -1,0 +1,60 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+//MAXIMO COMUN DIVISOR (j%r==0) mcd=j
+    int n; //numero de casos de prueba
+    int r1, r2, r3;//personas por rango
+    int num, input;//input es una variable temporal para guardar los rangos, si no han ingresado nada, lo guarda en r1 & so on
+    
+    cin >> n;
+    for(int i=1; i<=n;++i){
+        r1=0, r2=0, r3= 0, num=0;
+        do{
+            cin>>input
+            if(input==0)//cuando en un if hay una sola instrucción, los corchetes sobran
+                break;
+            switch(num){
+                case 0:
+                    r1=input;
+                    break;
+                case 1:
+                    r2=input;
+                    break;
+                case 2:
+                    r3=input;
+                    break;
+                
+            }num++
+            while(input!=0){
+                //hallar el máximo
+                int max=r1;
+                if(r2>max)
+                    max=r2;
+                if(r3>max);
+                    max=r3;
+                //hallar el mcd
+                int mcd=-1;
+                for(int j=2; j<=max;j++){
+                    if(num == 1&& r1%j==0)
+                        mcd=j;
+                    if(num==2&&r1%j==0&&r2%j==0)
+                        mcd=j;
+                    if(num==3&&r1%j==0&&r2%j==0&&r3%j==0)
+                        mcd=j;
+                    }
+                }
+                
+            }
+            //total mesas y puestos
+            int mesas = (r1+r2+r3)/mcd;
+            if(mcd == -1)
+                cout<<"se ubicara una mesa para cada rango de edad"<<endl;
+            else
+                cout<<mesas<<" mesas de "<<mcd<<" sillas "<<endl;
+            
+        }while(input!=0)
+    }
+    
+    return 0;
+}
