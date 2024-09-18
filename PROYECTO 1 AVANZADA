@@ -1,0 +1,355 @@
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <ctime>
+#include <cstdlib>
+#include <sstream>
+using namespace std;
+
+struct tablero {
+    string nombre;
+    int ancho;
+    int largo;
+    char** tablero; // es el tablero cargado
+    char** tabUsuario; // es el tablero que se le muestra al usuario al jugar
+    int casillasDescubiertas; 
+    int cantidadMovimientos; 
+    int trofeosEncontrados; 
+};
+
+struct casilla {
+    char seleccion;
+    int x;
+    int y;
+};
+
+struct jugador {
+    char nombre[20];
+    long double puntaje;
+};
+
+struct leaderboard {
+    char tablerosCargados;
+    char cantUsuarios;
+    jugador* jugadores;
+};
+
+bool leerTablero(const string& nombreArchivo, tablero*& tableros, int& numTableros) {
+    ifstream archivo(nombreArchivo);
+    if (!(archivo.is_open())) {
+        cout << "Error al abrir el archivo: " << nombreArchivo << endl;
+        return false;
+    }
+
+    archivo >> numTableros;
+    archivo.ignore(); 
+
+    tableros = new tablero[numTableros];
+
+    for (int i = 0; i < numTableros; ++i) {
+        getline(archivo, tableros[i].nombre);
+        archivo >> tableros[i].largo >> tableros[i].ancho;
+        archivo.ignore(); 
+
+        tableros[i].tablero = new char*[tableros[i].largo];
+        for (int j = 0; j < tableros[i].largo; ++j) {
+            tableros[i].tablero[j] = new char[tableros[i].ancho];
+        }
+
+        for (int j = 0; j < tableros[i].largo; ++j) {
+            for (int k = 0; k < tableros[i].ancho; ++k) {
+                archivo >> tableros[i].tablero[j][k];
+            }
+            archivo.ignore();
+        }
+    }
+
+    archivo.close();
+    return true;
+}
+
+void inicializarTableroCubierto(tablero& tab) {
+    tab.tabUsuario = new char*[tab.largo];
+    for (int i = 0; i < tab.largo; ++i) {
+        tab.tabUsuario[i] = new char[tab.ancho];
+        for (int j = 0; j < tab.ancho; ++j) {
+            tab.tabUsuario[i][j] = '?';
+        }
+    }
+}
+
+void mostrarTableroCubierto(tablero& tab) {
+    for (int i = 0; i < tab.largo; ++i) {
+        for (int j = 0; j < tab.ancho; ++j) {
+            cout << tab.tabUsuario[i][j] << ' ';
+        }
+        cout << endl;
+    }
+}
+
+void calcularVecinas(int row, int col, int rows, int cols, casilla* veci, int& cuenta) {
+    cuenta = 0;
+
+    if (row > 0) {
+        veci[cuenta].x = row - 1;
+        veci[cuenta].y = col;
+        ++cuenta; // ARRIBA
+    }
+    if (row < rows - 1) {
+        veci[cuenta].x = row + 1;
+        veci[cuenta].y = col;
+        ++cuenta; // ABAJO
+    }
+    if (col > 0) {
+        veci[cuenta].x = row;
+        veci[cuenta].y = col - 1;
+        ++cuenta; // IZQUIERDA
+    }
+    if (col < cols - 1) {
+        veci[cuenta].x = row;
+        veci[cuenta].y = col + 1;
+        ++cuenta; // DERECHA
+    }
+
+    // Diagonales
+    if (row > 0 && col > 0) {
+        veci[cuenta].x = row - 1;
+        veci[cuenta].y = col - 1;
+        ++cuenta; // ARRIBA-IZQUIERDA
+    }
+    if (row < rows - 1 && col < cols - 1) {
+        veci[cuenta].x = row + 1;
+        veci[cuenta].y = col + 1;
+        ++cuenta; // ABAJO-DERECHA
+    }
+    if (row < rows - 1 && col > 0) {
+        veci[cuenta].x = row + 1;
+        veci[cuenta].y = col - 1;
+        ++cuenta; // ABAJO-IZQUIERDA
+    }
+    if (row > 0 && col < cols - 1) {
+        veci[cuenta].x = row - 1;
+        veci[cuenta].y = col + 1;
+        ++cuenta; // ARRIBA-DERECHA
+    }
+}
+
+// actualizar las celdas con números
+void procesarTablero(tablero& tab) {
+    for (int r = 0; r < tab.largo; ++r) {
+        for (int c = 0; c < tab.ancho; ++c) {
+            if (tab.tablero[r][c] == '*') { // Si es una mina
+                casilla vecinas[8];
+                int cuenta;
+                calcularVecinas(r, c, tab.largo, tab.ancho, vecinas, cuenta);
+
+                for (int i = 0; i < cuenta; ++i) {
+                    int nr = vecinas[i].x;
+                    int nc = vecinas[i].y;
+
+                    if (tab.tablero[nr][nc] != '*') {
+                        if (tab.tablero[nr][nc] == '.') {
+                            tab.tablero[nr][nc] = '1'; 
+                        } else if (tab.tablero[nr][nc] >= '1' && tab.tablero[nr][nc] <= '8') {
+                            int minasCercanas = tab.tablero[nr][nc] - '0';  // Convierte de carácter a número
+                            minasCercanas++; 
+                            tab.tablero[nr][nc] = minasCercanas + '0';  // Convierte de nuevo a carácter
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void marcarCasilla(tablero& tab, int fila, int columna) {
+    if (tab.tabUsuario[fila][columna] != '?') {
+        cout << "No puedes marcar una casilla que ya ha sido descubierta." << endl;
+        return;
+    }
+    tab.tabUsuario[fila][columna] = '@';
+}
+
+bool descubrirCasilla(tablero& tab, int fila, int columna, bool manual) {
+    if (fila < 0 || fila >= tab.largo || columna < 0 || columna >= tab.ancho) {
+        if (manual) {
+            cout << "Coordenadas fuera de los límites. Inténtalo de nuevo." << endl;
+        }
+        return false; 
+    }
+
+    if (tab.tabUsuario[fila][columna] != '?') {
+        if (manual) {
+            cout << "Esta casilla ya está descubierta." << endl;
+        }
+        return false;
+    }
+
+    tab.tabUsuario[fila][columna] = tab.tablero[fila][columna];
+    tab.casillasDescubiertas++;
+
+    if (tab.tablero[fila][columna] == '*') {
+        if (manual) {
+            cout << "¡Qué aguacate más explosivo!" << endl;
+        }
+        return true;
+    }
+
+    if (tab.tablero[fila][columna] == '.') {
+        casilla vecinas[8];
+        int cuenta;
+        calcularVecinas(fila, columna, tab.largo, tab.ancho, vecinas, cuenta);
+
+        for (int i = 0; i < cuenta; ++i) {
+            descubrirCasilla(tab, vecinas[i].x, vecinas[i].y, false);  // Descubre vecinas
+        }
+    }
+
+    if (tab.tablero[fila][columna] == '#') {
+        cout << "Has encontrado un trofeo." << endl;
+        tab.tabUsuario[fila][columna] = '#';
+        tab.trofeosEncontrados++;
+        return false;
+    }
+
+    return false;
+}
+
+bool verificarVictoria(const tablero& tab) {
+    bool todasMinasDescubiertas = true; 
+    bool todoTableroDescubierto = true;
+    for (int i = 0; i < tab.largo; ++i) {
+        for (int j = 0; j < tab.ancho; ++j) {
+            // Si es una mina y no está marcada con '@' no se acaba el juego
+            if (tab.tablero[i][j] == '*' && tab.tabUsuario[i][j] != '@') {
+                todasMinasDescubiertas=false;
+            }
+            //si no ha terminado de descubrir las casillas no ha ganado el juego
+            if (tab.tablero[i][j] != '*' && tab.tabUsuario[i][j] == '?') {
+                todoTableroDescubierto=false;
+            }
+        }
+    }
+    return todasMinasDescubiertas || todoTableroDescubierto;
+}
+
+double calcularPuntaje(int movimientos, int descubiertas, int trofeos, double segundos) {
+    return round((movimientos / 10946.0 + descubiertas / 6765.0 + trofeos * 4181 + 2584 / segundos) * 100) / 100;
+}
+
+void guardarLeaderboard(const string& archivo, const leaderboard& lb) {
+    ofstream file(archivo, ios::binary);
+    if (!file) {
+        cout << "Error al abrir el archivo para guardar el leaderboard." << endl;
+        return;
+    }
+
+    file.write(reinterpret_cast<const char*>(&lb.tablerosCargados), sizeof(lb.tablerosCargados));
+    for (int i = 0; i < lb.tablerosCargados; ++i) {
+        file.write(reinterpret_cast<const char*>(&lb.cantUsuarios), sizeof(lb.cantUsuarios));
+        for (int j = 0; j < lb.cantUsuarios; ++j) {
+            file.write(lb.jugadores[j].nombre, sizeof(lb.jugadores[j].nombre));
+            file.write(reinterpret_cast<const char*>(&lb.jugadores[j].puntaje), sizeof(lb.jugadores[j].puntaje));
+        }
+    }
+    file.close();
+}
+
+void cargarLeaderboard(const string& archivo, leaderboard& lb) {
+    ifstream file(archivo, ios::binary);
+    if (!file) {
+        cout << "Error al abrir el archivo para cargar el leaderboard." << endl;
+        return;
+    }
+
+    file.read(reinterpret_cast<char*>(&lb.tablerosCargados), sizeof(lb.tablerosCargados));
+    for (int i = 0; i < lb.tablerosCargados; ++i) {
+        file.read(reinterpret_cast<char*>(&lb.cantUsuarios), sizeof(lb.cantUsuarios));
+        lb.jugadores = new jugador[lb.cantUsuarios];
+        for (int j = 0; j < lb.cantUsuarios; ++j) {
+            file.read(lb.jugadores[j].nombre, sizeof(lb.jugadores[j].nombre));
+            file.read(reinterpret_cast<char*>(&lb.jugadores[j].puntaje), sizeof(lb.jugadores[j].puntaje));
+        }
+    }
+    file.close();
+}
+
+void jugar(tablero& tablero) {
+    bool finDelJuego = false;
+    inicializarTableroCubierto(tablero);
+    tablero.casillasDescubiertas = 0;
+    tablero.cantidadMovimientos = 0;
+    tablero.trofeosEncontrados = 0;
+    time_t start = time(nullptr);
+
+    while (!finDelJuego) {
+        mostrarTableroCubierto(tablero);
+
+        casilla c;
+        cout << "Ingresa las coordenadas de la forma: D X Y para descubrir o B X Y para marcar: ";
+        cin >> c.seleccion >> c.x >> c.y;
+        c.x--;
+        c.y--;
+
+        if (c.seleccion == 'D') {
+            finDelJuego = descubrirCasilla(tablero, c.x, c.y, true);
+            tablero.cantidadMovimientos++;
+        } else if (c.seleccion == 'B') {
+            marcarCasilla(tablero, c.x, c.y);
+            tablero.cantidadMovimientos++;
+        }
+
+        if (verificarVictoria(tablero)) {
+            cout << "¡Felicidades! Se te ha concedido el AGUACATE CÓSMICO, las partidas de Magic serán tuyas..." << endl;
+            finDelJuego = true;
+        }
+    }
+
+    time_t end = time(nullptr);
+    double segundos = difftime(end, start);
+    double puntaje = calcularPuntaje(tablero.cantidadMovimientos, tablero.casillasDescubiertas, tablero.trofeosEncontrados, segundos);
+    cout << "Tu puntaje final es: " << puntaje << endl;
+
+    // Guardar el puntaje en el leaderboard (implementación adicional necesaria)
+}
+
+void mostrarTableros(tablero* tableros, int numTableros){
+    for (int i = 0; i < numTableros; ++i) {
+        cout << i + 1 << ". Nombre del Tablero: " << tableros[i].nombre << endl;
+        cout << "Dimensiones: " << tableros[i].largo << "x" << tableros[i].ancho << endl;
+        cout << endl; 
+    }
+}
+
+int main() {
+    tablero* tableros = nullptr;
+    int numTableros = 0;
+    string archivo = "tableros.txt";
+    leaderboard lb;
+    int opcion;
+    lb.tablerosCargados = 0;
+    lb.cantUsuarios = 0;
+    
+
+    if (leerTablero(archivo, tableros, numTableros)) {
+        cout << "Bienvenido humano! Ingresa el tablero que deseas jugar"<<endl;
+        do {
+            mostrarTableros(tableros, numTableros);
+            cout << "Ingresa una opción: ";
+            cin >> opcion;
+
+            if (opcion > numTableros || opcion < 1) {
+                cout << "Ups! ese número de tablero no existe" << std::endl;
+            }
+        } while (opcion > numTableros || opcion < 1);
+
+        procesarTablero(tableros[opcion - 1]);
+        jugar(tableros[opcion - 1]);
+
+        guardarLeaderboard("leaderboard.bin", lb);
+        
+        
+    }
+
+    return 0;
+}
